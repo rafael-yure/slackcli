@@ -13,7 +13,7 @@ export function createSavedCommand(): Command {
     .description('List saved for later items')
     .option('--limit <number>', 'Maximum number of items to return')
     .option('--state <state>', 'Filter by state: saved, to_do, or completed')
-    .option('--workspace <id|name>', 'Workspace to use')
+    .option('--workspace <id|name|profile>', 'Workspace or authentication profile to use')
     .option('--json', 'Output in JSON format', false)
     .action(async (options) => {
       const spinner = ora('Fetching saved items...').start();

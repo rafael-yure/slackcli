@@ -19,7 +19,7 @@ export function createConversationsCommand(): Command {
     .option('--limit <number>', 'Number of conversations to return', '100')
     .option('--exclude-archived', 'Exclude archived conversations', false)
     .option('--cursor <cursor>', 'Pagination cursor for next page of results')
-    .option('--workspace <id|name>', 'Workspace to use (overrides default)')
+    .option('--workspace <id|name|profile>', 'Workspace or authentication profile to use')
     .action(async (options) => {
       const spinner = ora('Fetching conversations...').start();
 
@@ -78,7 +78,7 @@ export function createConversationsCommand(): Command {
     .option('--limit <number>', 'Number of messages to return', '100')
     .option('--oldest <timestamp>', 'Start of time range')
     .option('--latest <timestamp>', 'End of time range')
-    .option('--workspace <id|name>', 'Workspace to use')
+    .option('--workspace <id|name|profile>', 'Workspace or authentication profile to use')
     .option('--json', 'Output in JSON format (includes timestamps for replies)', false)
     .action(async (channelId, options) => {
       const spinner = ora('Fetching messages...').start();
@@ -190,7 +190,7 @@ export function createConversationsCommand(): Command {
     .description('Get a specific message by channel ID and timestamp')
     .argument('<channel-id>', 'Channel ID')
     .argument('<timestamp>', 'Message timestamp')
-    .option('--workspace <id|name>', 'Workspace to use')
+    .option('--workspace <id|name|profile>', 'Workspace or authentication profile to use')
     .option('--json', 'Output in JSON format', false)
     .action(async (channelId, timestamp, options) => {
       const spinner = ora('Fetching message...').start();
@@ -268,7 +268,7 @@ export function createConversationsCommand(): Command {
     .command('unread')
     .description('List conversations with unread messages')
     .option('--types <types>', 'Filter by type (comma-separated: channels,dms,groups)')
-    .option('--workspace <id|name>', 'Workspace to use')
+    .option('--workspace <id|name|profile>', 'Workspace or authentication profile to use')
     .option('--json', 'Output in JSON format', false)
     .action(async (options) => {
       const spinner = ora('Fetching unread counts...').start();

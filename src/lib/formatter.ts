@@ -38,12 +38,21 @@ export function formatTimestamp(ts: string): string {
 }
 
 // Format workspace info
-export function formatWorkspace(config: WorkspaceConfig, isDefault: boolean = false): string {
+export function formatWorkspace(
+  config: WorkspaceConfig,
+  isDefault: boolean = false,
+  profileKey?: string
+): string {
   const defaultBadge = isDefault ? chalk.green('(default)') : '';
   const authType = config.auth_type === 'browser' ? '🌐 Browser' : '🔑 Standard';
+  const resolvedProfileKey = profileKey
+    || `${config.workspace_id}:${config.profile_name}`;
+  const profile = config.profile_name
+    ? `\n  Profile: ${config.profile_name}\n  Key: ${resolvedProfileKey}`
+    : '';
 
   return `${chalk.bold(config.workspace_name)} ${defaultBadge}
-  ID: ${config.workspace_id}
+  ID: ${config.workspace_id}${profile}
   Auth: ${authType}`;
 }
 

@@ -1,17 +1,23 @@
 import { SlackClient } from './slack-client.ts';
-import { addWorkspace, getWorkspace } from './workspaces.ts';
+import { addWorkspace, getWorkspace, validateProfileName } from './workspaces.ts';
 import type { StandardAuthConfig, BrowserAuthConfig, WorkspaceConfig } from '../types/index.ts';
 import { extractSlackWorkspaceName } from './curl-parser.ts';
 
 // Authenticate with standard token
 export async function authenticateStandard(
   token: string,
-  workspaceName: string
+  workspaceName: string,
+  profileName?: string
 ): Promise<WorkspaceConfig> {
+  const normalizedProfileName = profileName
+    ? validateProfileName(profileName)
+    : undefined;
+
   // Create a temporary config to test the token
   const tempConfig: StandardAuthConfig = {
     workspace_id: 'temp',
     workspace_name: workspaceName,
+    profile_name: normalizedProfileName,
     auth_type: 'standard',
     token,
     token_type: token.startsWith('xoxb-') ? 'bot' : 'user',
@@ -43,8 +49,13 @@ export async function authenticateBrowser(
   xoxdToken: string,
   xoxcToken: string,
   workspaceUrl: string,
-  workspaceName?: string
+  workspaceName?: string,
+  profileName?: string
 ): Promise<WorkspaceConfig> {
+  const normalizedProfileName = profileName
+    ? validateProfileName(profileName)
+    : undefined;
+
   // Extract workspace name from URL if not provided
   const defaultName = extractSlackWorkspaceName(workspaceUrl);
 
@@ -52,6 +63,7 @@ export async function authenticateBrowser(
   const tempConfig: BrowserAuthConfig = {
     workspace_id: 'temp',
     workspace_name: workspaceName || defaultName,
+    profile_name: normalizedProfileName,
     workspace_url: workspaceUrl,
     auth_type: 'browser',
     xoxd_token: xoxdToken,

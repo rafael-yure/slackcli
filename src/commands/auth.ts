@@ -2,7 +2,7 @@ import { Command } from 'commander';
 import ora from 'ora';
 import { authenticateStandard, authenticateBrowser } from '../lib/auth.ts';
 import {
-  getAllWorkspaces,
+  getAllWorkspaceEntries,
   setDefaultWorkspace,
   removeWorkspace,
   clearAllWorkspaces,
@@ -24,18 +24,23 @@ export function createAuthCommand(): Command {
     .description('Login with standard Slack app token (xoxb-* or xoxp-*)')
     .requiredOption('--token <token>', 'Slack bot or user token')
     .requiredOption('--workspace-name <name>', 'Workspace name for identification')
+    .option('--profile <name>', 'Profile name for this authentication')
     .action(async (options) => {
       const spinner = ora('Authenticating...').start();
 
       try {
         const config = await authenticateStandard(
           options.token,
-          options.workspaceName
+          options.workspaceName,
+          options.profile
         );
 
         spinner.succeed('Authentication successful!');
         success(`Authenticated as workspace: ${config.workspace_name}`);
         info(`Workspace ID: ${config.workspace_id}`);
+        if (config.profile_name) {
+          info(`Profile: ${config.profile_name}`);
+        }
         if (config.auth_type === 'standard') {
           info(`Token Type: ${config.token_type}`);
         }
@@ -54,6 +59,7 @@ export function createAuthCommand(): Command {
     .requiredOption('--xoxc <token>', 'Browser API token (xoxc-*)')
     .requiredOption('--workspace-url <url>', 'Workspace URL (e.g., https://myteam.slack.com)')
     .option('--workspace-name <name>', 'Optional workspace name for identification')
+    .option('--profile <name>', 'Profile name for this authentication')
     .action(async (options) => {
       const spinner = ora('Authenticating...').start();
 
@@ -62,12 +68,16 @@ export function createAuthCommand(): Command {
           options.xoxd,
           options.xoxc,
           options.workspaceUrl,
-          options.workspaceName
+          options.workspaceName,
+          options.profile
         );
 
         spinner.succeed('Authentication successful!');
         success(`Authenticated as workspace: ${config.workspace_name}`);
         info(`Workspace ID: ${config.workspace_id}`);
+        if (config.profile_name) {
+          info(`Profile: ${config.profile_name}`);
+        }
         if (config.auth_type === 'browser') {
           info(`Workspace URL: ${config.workspace_url}`);
         }
@@ -84,7 +94,7 @@ export function createAuthCommand(): Command {
     .description('List all authenticated workspaces')
     .action(async () => {
       try {
-        const workspaces = await getAllWorkspaces();
+        const workspaces = await getAllWorkspaceEntries();
         const defaultId = await getDefaultWorkspaceId();
 
         if (workspaces.length === 0) {
@@ -95,9 +105,11 @@ export function createAuthCommand(): Command {
 
         console.log(chalk.bold(`\n📋 Authenticated Workspaces (${workspaces.length}):\n`));
 
-        workspaces.forEach((ws, idx) => {
-          const isDefault = ws.workspace_id === defaultId;
-          console.log(`${idx + 1}. ${formatWorkspace(ws, isDefault)}\n`);
+        workspaces.forEach((entry, idx) => {
+          const isDefault = entry.key === defaultId;
+          console.log(
+            `${idx + 1}. ${formatWorkspace(entry.config, isDefault, entry.key)}\n`
+          );
         });
       } catch (err: any) {
         error('Failed to list workspaces', err.message);
@@ -109,11 +121,11 @@ export function createAuthCommand(): Command {
   auth
     .command('set-default')
     .description('Set default workspace')
-    .argument('<workspace-id>', 'Workspace ID to set as default')
-    .action(async (workspaceId) => {
+    .argument('<workspace>', 'Workspace ID, name, profile, or profile key')
+    .action(async (workspace) => {
       try {
-        await setDefaultWorkspace(workspaceId);
-        success(`Set ${workspaceId} as default workspace`);
+        await setDefaultWorkspace(workspace);
+        success(`Set ${workspace} as default workspace`);
       } catch (err: any) {
         error('Failed to set default workspace', err.message);
         process.exit(1);
@@ -124,11 +136,11 @@ export function createAuthCommand(): Command {
   auth
     .command('remove')
     .description('Remove a workspace')
-    .argument('<workspace-id>', 'Workspace ID to remove')
-    .action(async (workspaceId) => {
+    .argument('<workspace>', 'Workspace ID, name, profile, or profile key')
+    .action(async (workspace) => {
       try {
-        await removeWorkspace(workspaceId);
-        success(`Removed workspace ${workspaceId}`);
+        await removeWorkspace(workspace);
+        success(`Removed workspace ${workspace}`);
       } catch (err: any) {
         error('Failed to remove workspace', err.message);
         process.exit(1);
@@ -183,6 +195,7 @@ export function createAuthCommand(): Command {
     .argument('[curl-command]', 'cURL command (or use --from-clipboard / interactive mode)')
     .option('--login', 'Automatically login with extracted tokens')
     .option('--from-clipboard', 'Read cURL command from system clipboard')
+    .option('--profile <name>', 'Profile name for this authentication')
     .action(async (curlCommand, options) => {
       try {
         let curlInput = curlCommand;
@@ -254,10 +267,19 @@ export function createAuthCommand(): Command {
         if (options.login) {
           const spinner = ora('Authenticating with extracted tokens...').start();
           try {
-            const config = await authenticateBrowser(parsed.xoxd, parsed.xoxc, parsed.workspaceUrl, parsed.workspaceName);
+            const config = await authenticateBrowser(
+              parsed.xoxd,
+              parsed.xoxc,
+              parsed.workspaceUrl,
+              parsed.workspaceName,
+              options.profile
+            );
             spinner.succeed('Authentication successful!');
             success(`Authenticated as workspace: ${config.workspace_name}`);
             info(`Workspace ID: ${config.workspace_id}`);
+            if (config.profile_name) {
+              info(`Profile: ${config.profile_name}`);
+            }
           } catch (err: any) {
             spinner.fail('Authentication failed');
             error(err.message);
@@ -270,7 +292,8 @@ export function createAuthCommand(): Command {
           console.log(`  slackcli auth login-browser \\`);
           console.log(`    --xoxd="${parsed.xoxd}" \\`);
           console.log(`    --xoxc="${parsed.xoxc}" \\`);
-          console.log(`    --workspace-url="${parsed.workspaceUrl}"\n`);
+          console.log(`    --workspace-url="${parsed.workspaceUrl}" \\`);
+          console.log('    --profile="<profile-name>"\n');
         }
       } catch (err: any) {
         error('Failed to parse cURL command', err.message);

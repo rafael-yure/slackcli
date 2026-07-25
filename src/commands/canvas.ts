@@ -18,7 +18,7 @@ export function createCanvasCommand(): Command {
     .description('List canvas documents in the workspace')
     .option('--limit <number>', 'Number of canvases to return', '20')
     .option('--channel <id>', 'List canvases shared in a specific channel')
-    .option('--workspace <id|name>', 'Workspace to use')
+    .option('--workspace <id|name|profile>', 'Workspace or authentication profile to use')
     .option('--json', 'Output in JSON format', false)
     .action(async (options) => {
       const spinner = ora('Fetching canvases...').start();
@@ -79,7 +79,7 @@ export function createCanvasCommand(): Command {
     .argument('[canvas-id]', 'Canvas file ID (e.g., F1234567890)')
     .option('--channel <id>', 'Read the canvas associated with a channel')
     .option('--raw', 'Output raw HTML instead of markdown', false)
-    .option('--workspace <id|name>', 'Workspace to use')
+    .option('--workspace <id|name|profile>', 'Workspace or authentication profile to use')
     .option('--json', 'Output in JSON format', false)
     .action(async (canvasId, options) => {
       const spinner = ora('Fetching canvas...').start();

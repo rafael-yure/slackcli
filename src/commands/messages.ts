@@ -15,7 +15,7 @@ export function createMessagesCommand(): Command {
     .requiredOption('--message <text>', 'Message text content')
     .option('--thread-ts <timestamp>', 'Send as reply to thread')
     .option('--file <path>', 'Attach a file to the message')
-    .option('--workspace <id|name>', 'Workspace to use')
+    .option('--workspace <id|name|profile>', 'Workspace or authentication profile to use')
     .action(async (options) => {
       const spinner = ora('Sending message...').start();
 
@@ -62,7 +62,7 @@ export function createMessagesCommand(): Command {
     .requiredOption('--channel-id <id>', 'Channel ID where the message is')
     .requiredOption('--timestamp <ts>', 'Message timestamp')
     .requiredOption('--emoji <name>', 'Emoji name (e.g., thumbsup, heart, fire)')
-    .option('--workspace <id|name>', 'Workspace to use')
+    .option('--workspace <id|name|profile>', 'Workspace or authentication profile to use')
     .action(async (options) => {
       const spinner = ora('Adding reaction...').start();
 
@@ -87,7 +87,7 @@ export function createMessagesCommand(): Command {
     .requiredOption('--channel-id <id>', 'Channel ID where the message is')
     .requiredOption('--timestamp <ts>', 'Message timestamp')
     .requiredOption('--message <text>', 'New message text content')
-    .option('--workspace <id|name>', 'Workspace to use')
+    .option('--workspace <id|name|profile>', 'Workspace or authentication profile to use')
     .action(async (options) => {
       const spinner = ora('Updating message...').start();
 
@@ -116,7 +116,7 @@ export function createMessagesCommand(): Command {
     .requiredOption('--recipient-id <id>', 'Channel ID or User ID')
     .requiredOption('--message <text>', 'Message text content')
     .option('--thread-ts <timestamp>', 'Create draft as reply to thread')
-    .option('--workspace <id|name>', 'Workspace to use')
+    .option('--workspace <id|name|profile>', 'Workspace or authentication profile to use')
     .action(async (options) => {
       const spinner = ora('Creating draft...').start();
 

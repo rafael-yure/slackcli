@@ -93,7 +93,10 @@ SlackCLI supports two authentication methods:
 Create a Slack app at [api.slack.com/apps](https://api.slack.com/apps) and obtain a bot token (xoxb-*) or user token (xoxp-*).
 
 ```bash
-slackcli auth login --token=xoxb-YOUR-TOKEN --workspace-name="My Team"
+slackcli auth login \
+  --token=xoxb-YOUR-TOKEN \
+  --workspace-name="My Team" \
+  --profile=automation
 ```
 
 ### 2. Browser Session Tokens (Quick Setup)
@@ -108,8 +111,17 @@ slackcli auth extract-tokens
 slackcli auth login-browser \
   --xoxd=xoxd-YOUR-TOKEN \
   --xoxc=xoxc-YOUR-TOKEN \
-  --workspace-url=https://yourteam.slack.com
+  --workspace-url=https://yourteam.slack.com \
+  --profile=personal
 ```
+
+The optional profile name lets you keep multiple authentication identities for the same
+Slack workspace. This is useful when browser authentication is needed for personal search
+and drafts while a bot token is used for unattended automation.
+
+When `--profile` is omitted, SlackCLI uses `bot`, `user`, or `browser` based on the
+authentication type. Existing configurations are migrated automatically to the same
+profile names when they are loaded.
 
 **How to Extract Browser Tokens:**
 
@@ -262,7 +274,7 @@ slackcli update check
 slackcli update
 ```
 
-### Multi-Workspace Usage
+### Workspace and Profile Selection
 
 ```bash
 # Use specific workspace by ID
@@ -270,7 +282,17 @@ slackcli conversations list --workspace=T1234567
 
 # Use specific workspace by name
 slackcli conversations list --workspace="My Team"
+
+# Use a named authentication profile
+slackcli conversations list --workspace=personal
+
+# Use the full profile key when a profile name exists in more than one workspace
+slackcli conversations list --workspace=T1234567:personal
 ```
+
+Workspace IDs and names continue to work when they identify one stored authentication.
+When multiple profiles belong to the same workspace, select the profile name or full
+profile key explicitly.
 
 ## Configuration
 

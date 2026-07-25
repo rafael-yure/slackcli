@@ -26,7 +26,7 @@ export function createSearchCommand(): Command {
     .option('--page <number>', 'Page number', '1')
     .option('--sort <field>', 'Sort by: score or timestamp', 'timestamp')
     .option('--sort-dir <dir>', 'Sort direction: asc or desc', 'desc')
-    .option('--workspace <id|name>', 'Workspace to use')
+    .option('--workspace <id|name|profile>', 'Workspace or authentication profile to use')
     .option('--json', 'Output in JSON format', false)
     .action(async (query, options) => {
       // Append Slack search modifiers to query
@@ -87,7 +87,7 @@ export function createSearchCommand(): Command {
     .description('Search for channels by name')
     .argument('<query>', 'Channel name or keyword to search')
     .option('--limit <number>', 'Number of results', '20')
-    .option('--workspace <id|name>', 'Workspace to use')
+    .option('--workspace <id|name|profile>', 'Workspace or authentication profile to use')
     .option('--json', 'Output in JSON format', false)
     .action(async (query, options) => {
       const spinner = ora(`Searching channels for "${query}"...`).start();
@@ -144,7 +144,7 @@ export function createSearchCommand(): Command {
     .description('Search for people by name or email')
     .argument('<query>', 'Name, username, or email to search')
     .option('--limit <number>', 'Number of results', '20')
-    .option('--workspace <id|name>', 'Workspace to use')
+    .option('--workspace <id|name|profile>', 'Workspace or authentication profile to use')
     .option('--json', 'Output in JSON format', false)
     .action(async (query, options) => {
       const spinner = ora(`Searching people for "${query}"...`).start();

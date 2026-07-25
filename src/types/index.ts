@@ -8,6 +8,7 @@ export type ConversationType = 'public_channel' | 'private_channel' | 'mpim' | '
 export interface StandardAuthConfig {
   workspace_id: string;
   workspace_name: string;
+  profile_name?: string;
   auth_type: 'standard';
   token: string;
   token_type: TokenType;
@@ -16,6 +17,7 @@ export interface StandardAuthConfig {
 export interface BrowserAuthConfig {
   workspace_id: string;
   workspace_name: string;
+  profile_name?: string;
   workspace_url: string;
   auth_type: 'browser';
   xoxd_token: string;
@@ -138,6 +140,7 @@ export interface MessageDraftOptions {
 export interface AuthLoginOptions {
   token: string;
   workspaceName: string;
+  profile?: string;
 }
 
 export interface AuthLoginBrowserOptions {
@@ -145,6 +148,7 @@ export interface AuthLoginBrowserOptions {
   xoxc: string;
   workspaceUrl: string;
   workspaceName?: string;
+  profile?: string;
 }
 
 // Saved items
