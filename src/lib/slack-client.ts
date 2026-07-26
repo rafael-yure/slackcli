@@ -151,6 +151,10 @@ export class SlackClient {
     return this.request('chat.postMessage', params);
   }
 
+  async getPermalink(channel: string, messageTs: string): Promise<any> {
+    return this.request('chat.getPermalink', { channel, message_ts: messageTs });
+  }
+
   async updateMessage(channel: string, ts: string, text: string): Promise<any> {
     return this.request('chat.update', { channel, ts, text });
   }
@@ -261,11 +265,18 @@ export class SlackClient {
 
   // Add reaction to message
   async addReaction(channel: string, timestamp: string, name: string): Promise<any> {
-    return this.request('reactions.add', {
-      channel,
-      timestamp,
-      name
-    });
+    try {
+      return await this.request('reactions.add', {
+        channel,
+        timestamp,
+        name
+      });
+    } catch (error: any) {
+      if (error.message?.includes('already_reacted')) {
+        return { ok: true, already_reacted: true };
+      }
+      throw error;
+    }
   }
 
   // Remove reaction from message

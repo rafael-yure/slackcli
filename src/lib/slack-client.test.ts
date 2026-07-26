@@ -40,6 +40,13 @@ class TestSlackClient extends SlackClient {
       return { ok: true, channel: params.channel, ts: params.ts, text: params.text };
     }
 
+    if (method === 'chat.getPermalink') {
+      return {
+        ok: true,
+        permalink: `https://example.slack.com/archives/${params.channel}/p123`,
+      };
+    }
+
     throw new Error(`Unexpected method: ${method}`);
   }
 }
@@ -131,5 +138,36 @@ describe('SlackClient.updateMessage', () => {
       },
     ]);
     expect(response.ts).toBe('1234567890.123456');
+  });
+});
+
+describe('SlackClient.getPermalink', () => {
+  it('calls chat.getPermalink with the message coordinates', async () => {
+    const client = new TestSlackClient();
+
+    const response = await client.getPermalink('C123', '1234567890.123456');
+
+    expect(client.calls).toEqual([
+      {
+        method: 'chat.getPermalink',
+        params: { channel: 'C123', message_ts: '1234567890.123456' },
+      },
+    ]);
+    expect(response.permalink).toContain('/archives/C123/');
+  });
+});
+
+describe('SlackClient.addReaction', () => {
+  it('treats already_reacted as an idempotent success', async () => {
+    class AlreadyReactedClient extends TestSlackClient {
+      override async request(): Promise<unknown> {
+        throw new Error('Slack API error: already_reacted');
+      }
+    }
+
+    const response = await new AlreadyReactedClient()
+      .addReaction('C123', '1234567890.123456', 'merged');
+
+    expect(response).toEqual({ ok: true, already_reacted: true });
   });
 });

@@ -207,6 +207,12 @@ slackcli conversations read C1234567890 --json
 # Send message to a channel
 slackcli messages send --recipient-id=C1234567890 --message="Hello team!"
 
+# Send a message from a file and return channel, timestamp, and permalink as JSON
+slackcli messages send \
+  --recipient-id=C1234567890 \
+  --message-file=./message.md \
+  --json
+
 # Send DM to a user
 slackcli messages send --recipient-id=U9876543210 --message="Hey there!"
 
