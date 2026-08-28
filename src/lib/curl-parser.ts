@@ -28,8 +28,12 @@ export function extractSlackWorkspaceName(url: string): string {
  * Parse a cURL command and extract Slack authentication tokens
  */
 export function parseCurlCommand(curlInput: string): ParsedCurlResult {
-  // Extract workspace URL — domain can be myorg.slack.com or myorg.enterprise.slack.com
-  const urlMatch = curlInput.match(/curl\s+'?(https?:\/\/([\w.-]+)\.slack\.com[^'"\s]*)/);
+  // Extract workspace URL — domain can be myorg.slack.com or myorg.enterprise.slack.com.
+  // The URL may be positional (curl 'https://...') or flagged (curl --url 'https://...');
+  // anchor to curl or a URL-bearing flag so the origin/referer headers can't be mismatched.
+  const urlMatch = curlInput.match(
+    /(?:curl|--url|--location|-L)\s+'?(https?:\/\/([\w.-]+)\.slack\.com[^'"\s]*)/
+  );
   if (!urlMatch) {
     throw new CurlParseError('workspace', 'Could not find Slack workspace URL in cURL command');
   }
