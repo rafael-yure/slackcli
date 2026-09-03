@@ -65,6 +65,17 @@ describe('parseCurlCommand', () => {
       expect(result.workspaceName).toBe('singleline');
     });
 
+    it('should extract workspace when the URL is passed via --url', () => {
+      const curlWithUrlFlag = `curl --url 'https://flagteam.slack.com/api/client.extras' \\
+  -H 'origin: https://app.slack.com' \\
+  -b 'd=xoxd-flag-token' \\
+  --data-raw $'------Boundary\\r\\nContent-Disposition: form-data; name="token"\\r\\n\\r\\nxoxc-flag-token\\r\\n------Boundary--\\r\\n'`;
+      const result = parseCurlCommand(curlWithUrlFlag);
+      expect(result.workspaceName).toBe('flagteam');
+      expect(result.workspaceUrl).toBe('https://flagteam.slack.com');
+      expect(result.xoxc).toBe('xoxc-flag-token');
+    });
+
     it('should throw CurlParseError for missing workspace URL', () => {
       const invalidCurl = `curl 'https://example.com/api/test' -b 'd=xoxd-token'`;
       expect(() => parseCurlCommand(invalidCurl)).toThrow(CurlParseError);
