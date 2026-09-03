@@ -48,10 +48,15 @@ export async function readInteractiveInput(
     console.log(chalk.gray(hint));
     console.log();
 
+    // terminal:false, not true. With the terminal line-editor on, a multi-line PASTE (the shape of
+    // a browser "Copy as cURL", one arg per backslash-continued line) is mangled by bracketed-paste
+    // handling and drops continuation lines, so the cookie/token args never reach the parser. Raw
+    // line-buffered reading emits one 'line' per newline for the whole paste; double-Enter / Ctrl+D
+    // to finish still work.
     const rl = readline.createInterface({
       input: process.stdin,
       output: process.stdout,
-      terminal: true,
+      terminal: false,
     });
 
     rl.on('line', (line) => {

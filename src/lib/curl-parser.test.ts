@@ -40,6 +40,18 @@ const CURL_JSON_BODY = `curl 'https://jsonworkspace.slack.com/api/some.method' \
   -b 'd=xoxd-json-test-token' \\
   --data-raw '{"token":"xoxc-json-test-111-222","as_admin":false}'`;
 
+// URL-encoded body format (application/x-www-form-urlencoded): token as a query-style field
+const CURL_URLENCODED_BODY = `curl 'https://formteam.slack.com/api/some.method' \\
+  -H 'content-type: application/x-www-form-urlencoded' \\
+  -b 'd=xoxd-urlencoded-test-token' \\
+  --data-raw 'channel=C123&token=xoxc-urlencoded-111-222-abcdef&as_admin=false'`;
+
+// URL-encoded body where token is the FIRST field (no leading &)
+const CURL_URLENCODED_TOKEN_FIRST = `curl 'https://formteam2.slack.com/api/some.method' \\
+  -H 'content-type: application/x-www-form-urlencoded' \\
+  -b 'd=xoxd-urlencoded2-test-token' \\
+  --data 'token=xoxc-first-999-888&channel=C999'`;
+
 describe('parseCurlCommand', () => {
   describe('workspace extraction', () => {
     it('should extract workspace name and URL from standard curl command', () => {
@@ -138,6 +150,16 @@ describe('parseCurlCommand', () => {
     it('should extract xoxc token from JSON body format', () => {
       const result = parseCurlCommand(CURL_JSON_BODY);
       expect(result.xoxc).toBe('xoxc-json-test-111-222');
+    });
+
+    it('should extract xoxc token from a url-encoded body', () => {
+      const result = parseCurlCommand(CURL_URLENCODED_BODY);
+      expect(result.xoxc).toBe('xoxc-urlencoded-111-222-abcdef');
+    });
+
+    it('should extract xoxc token when it is the first url-encoded field', () => {
+      const result = parseCurlCommand(CURL_URLENCODED_TOKEN_FIRST);
+      expect(result.xoxc).toBe('xoxc-first-999-888');
     });
 
     it('should throw CurlParseError for missing xoxc token', () => {
