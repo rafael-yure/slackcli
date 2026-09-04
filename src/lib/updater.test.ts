@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import { isNewerVersion, isInstalledViaHomebrew, getUpdateCommand, getCurrentVersion, performUpdate } from './updater.ts';
+import { isNewerVersion, isInstalledViaHomebrew, getUpdateCommand, getCurrentVersion, performUpdate, managedUpdateNotice, MANAGED_UPDATE_EXIT, notifyIfUpdateAvailable } from './updater.ts';
 import packageJson from '../../package.json';
 
 describe('isNewerVersion', () => {
@@ -88,5 +88,28 @@ describe('performUpdate', () => {
     Object.defineProperty(process, 'execPath', { value: '/Users/me/.bun/bin/bun', configurable: true });
     await expect(performUpdate()).resolves.toBeUndefined();
     Object.defineProperty(process, 'execPath', { value: originalExecPath, configurable: true });
+  });
+});
+
+describe('Fleet-managed self-update suppression (PRD-32576)', () => {
+  it('isFleetManaged is false without the bake-time define (fail-safe to upstream behaviour)', async () => {
+    const { isFleetManaged } = await import('../version.ts');
+    expect(isFleetManaged()).toBe(false);   // test runtime has no __FLEET_MANAGED__ define
+  });
+
+  it('the managed notice steers to `fleet update`, not `slackcli update`', () => {
+    const msg = managedUpdateNotice();
+    expect(msg).toContain('fleet update');
+    expect(msg.toLowerCase()).toContain('managed by fleet');
+  });
+
+  it('a managed build that refuses to self-update exits non-zero', () => {
+    expect(MANAGED_UPDATE_EXIT).toBe(2);   // scripts must not read a no-op update as success
+  });
+
+  it('managed=true suppresses the update nag (registers no beforeExit listener)', () => {
+    const before = process.listenerCount('beforeExit');
+    notifyIfUpdateAvailable(true);
+    expect(process.listenerCount('beforeExit')).toBe(before);
   });
 });

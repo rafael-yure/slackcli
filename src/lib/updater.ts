@@ -4,7 +4,15 @@ import { tmpdir, homedir } from 'os';
 import { join } from 'path';
 import chalk from 'chalk';
 import { info, success, error as logError } from './formatter.ts';
-import { getAppVersion, isRunningUnderBun } from '../version.ts';
+import { getAppVersion, isRunningUnderBun, isFleetManaged } from '../version.ts';
+
+/** Exit code for a self-update the user asked for but that a managed build won't perform. */
+export const MANAGED_UPDATE_EXIT = 2;
+
+/** The message a Fleet-managed build shows in place of the upstream self-update path. */
+export function managedUpdateNotice(): string {
+  return 'This slackcli is managed by Fleet — updates arrive via `fleet update`, not `slackcli update`.';
+}
 
 const CONFIG_DIR = join(homedir(), '.config', 'slackcli');
 const UPDATE_CACHE_FILE = join(CONFIG_DIR, 'update-check.json');
@@ -216,7 +224,12 @@ export function getUpdateCommand(): string {
 
 // Show a one-line update notification after the command finishes (via beforeExit),
 // and refresh the cache in the background if it is stale.
-export function notifyIfUpdateAvailable(): void {
+export function notifyIfUpdateAvailable(managed: boolean = isFleetManaged()): void {
+  // A Fleet-managed build never self-updates (that would drop the vendored fork fixes), so it
+  // must not nag the user toward `slackcli update`. Updates arrive via `fleet update`.
+  if (managed) {
+    return;
+  }
   // Local `bun run` / source checkout — not a release binary; skip self-update nags.
   if (isRunningUnderBun()) {
     return;

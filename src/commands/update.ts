@@ -1,11 +1,19 @@
 import { Command } from 'commander';
-import { checkForUpdates, performUpdate, getCurrentVersion } from '../lib/updater.ts';
+import { checkForUpdates, performUpdate, getCurrentVersion, managedUpdateNotice, MANAGED_UPDATE_EXIT } from '../lib/updater.ts';
 import { success, error, info } from '../lib/formatter.ts';
+import { isFleetManaged } from '../version.ts';
 
 export function createUpdateCommand(): Command {
   const update = new Command('update')
     .description('Check for and install updates')
     .action(async () => {
+      // A Fleet-managed build won't self-update (that would drop the vendored fork fixes). Exit
+      // non-zero: the user asked for an update and did not get one, so scripts must not read
+      // success.
+      if (isFleetManaged()) {
+        info(managedUpdateNotice());
+        process.exit(MANAGED_UPDATE_EXIT);
+      }
       try {
         await performUpdate();
       } catch (err: any) {
@@ -20,6 +28,10 @@ export function createUpdateCommand(): Command {
     .description('Check for available updates')
     .action(async () => {
       try {
+        if (isFleetManaged()) {
+          info(managedUpdateNotice());
+          return;
+        }
         const result = await checkForUpdates(false);
 
         info(`Current version: v${result.currentVersion}`);

@@ -23,6 +23,10 @@ const result = Bun.spawnSync(
     ...extraArgs,
     '--define',
     `__APP_VERSION__=${JSON.stringify(version)}`,
+    // Fleet's build (make slackcli) sets FLEET_MANAGED=1 so the binary suppresses upstream
+    // self-update; an upstream/plain build leaves it unset -> false -> normal self-update.
+    '--define',
+    `__FLEET_MANAGED__=${process.env.FLEET_MANAGED === '1' ? 'true' : 'false'}`,
     'src/index.ts',
     `--outfile=${outfile}`,
   ],
