@@ -10,7 +10,7 @@ import {
 } from '../lib/workspaces.ts';
 import { success, error, info, formatWorkspace } from '../lib/formatter.ts';
 import chalk from 'chalk';
-import { parseCurlCommand, CurlParseError, looksLikeCurlCommand } from '../lib/curl-parser.ts';
+import { parseCurlCommand, CurlParseError, looksLikeCurlCommand, looksLikeInlineCurlPaste } from '../lib/curl-parser.ts';
 import { readClipboard } from '../lib/clipboard.ts';
 import { readInteractiveInput, isInteractiveTerminal, hasPipedInput } from '../lib/interactive-input.ts';
 
@@ -196,8 +196,28 @@ export function createAuthCommand(): Command {
     .option('--login', 'Automatically login with extracted tokens')
     .option('--from-clipboard', 'Read cURL command from system clipboard')
     .option('--profile <name>', 'Profile name for this authentication')
+    // Accept curl's own flags as argv rather than erroring on them: an unquoted inline paste is
+    // caught below and steered to a working flow, instead of Commander dying on `--compressed`.
+    .allowUnknownOption()
+    .allowExcessArguments()
     .action(async (curlCommand, options) => {
       try {
+        // An unquoted "Copy as cURL" paste explodes into curl-signature argv tokens (curl, -H,
+        // --compressed, the URL, …). Detect it and steer to the flows that actually work rather
+        // than parsing a mangled fragment. A correctly quoted single-argument paste is one token
+        // and does not trip this. (PRD-32575)
+        const afterSub = process.argv.slice(process.argv.indexOf('parse-curl') + 1);
+        if (looksLikeInlineCurlPaste(afterSub)) {
+          error('It looks like the cURL command was pasted inline, so its own flags (-H, --compressed, …) were read as options.');
+          console.log(chalk.yellow('\n💡 Use one of these instead:'));
+          console.log('\n  Interactive (recommended) — run the bare command, then paste at the prompt (Enter twice):');
+          console.log(chalk.cyan('    slackcli auth parse-curl --login'));
+          console.log('\n  From clipboard:');
+          console.log(chalk.cyan('    slackcli auth parse-curl --from-clipboard --login'));
+          console.log(chalk.gray('\n  (To inline it, wrap the entire cURL command in single quotes as one argument.)\n'));
+          process.exit(1);
+        }
+
         let curlInput = curlCommand;
 
         // Get input from various sources (in priority order)

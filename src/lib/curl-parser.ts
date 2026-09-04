@@ -101,3 +101,28 @@ export function looksLikeCurlCommand(input: string): boolean {
   const trimmed = input.trim();
   return trimmed.startsWith('curl ') || trimmed.startsWith('curl\t');
 }
+
+/**
+ * Detect a cURL command that was pasted INLINE and UNQUOTED after `parse-curl`.
+ *
+ * A browser "Copy as cURL" pasted unquoted explodes into many argv tokens — a bare `curl`, the
+ * request URL, and curl's own flags (`-H`, `--compressed`, `-b`, …) — so Commander parses those
+ * flags as unknown slackcli options and dies with `unknown option '--compressed'`. Any of these
+ * curl-signature tokens appearing as its OWN argv token means the paste was not quoted as a single
+ * argument. A correctly quoted single-argument paste stays one token (starting `curl `) and does
+ * not match, so the normal inline path still parses.
+ *
+ * `args` is the argv slice AFTER the `parse-curl` subcommand token.
+ */
+export function looksLikeInlineCurlPaste(args: string[]): boolean {
+  return args.some(
+    (a) =>
+      a === 'curl' ||
+      a === '-H' ||
+      a === '--header' ||
+      a === '-b' ||
+      a === '--cookie' ||
+      a === '--compressed' ||
+      /^https?:\/\//.test(a),
+  );
+}

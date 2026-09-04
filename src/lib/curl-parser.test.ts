@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import { parseCurlCommand, CurlParseError, looksLikeCurlCommand, extractSlackWorkspaceName } from './curl-parser';
+import { parseCurlCommand, CurlParseError, looksLikeCurlCommand, looksLikeInlineCurlPaste, extractSlackWorkspaceName } from './curl-parser';
 
 // Sample cURL command with anonymized tokens (based on real Slack API request format)
 const SAMPLE_CURL_COMMAND = `curl 'https://myworkspace.slack.com/api/conversations.view?_x_id=noversion-1770041775.173&_x_version_ts=1770035254&_x_frontend_build_type=current&_x_desktop_ia=4&_x_gantry=true&fp=66&_x_num_retries=0' \\
@@ -259,5 +259,33 @@ describe('looksLikeCurlCommand', () => {
 
   it('should handle curl with tab separator', () => {
     expect(looksLikeCurlCommand('curl\thttps://example.com')).toBe(true);
+  });
+});
+
+describe('looksLikeInlineCurlPaste (PRD-32575)', () => {
+  it('detects an unquoted inline paste (curl + its flags as separate argv tokens)', () => {
+    const argv = ['curl', 'https://myworkspace.slack.com/api/conversations.view',
+      '-H', 'Cookie: d=xoxd-abc', '--compressed'];
+    expect(looksLikeInlineCurlPaste(argv)).toBe(true);
+  });
+
+  it('detects each curl-signature token on its own', () => {
+    for (const tok of ['curl', '-H', '--header', '-b', '--cookie', '--compressed',
+      'https://x.slack.com/api']) {
+      expect(looksLikeInlineCurlPaste([tok])).toBe(true);
+    }
+  });
+
+  it('does NOT trip on normal slackcli usage', () => {
+    expect(looksLikeInlineCurlPaste([])).toBe(false);
+    expect(looksLikeInlineCurlPaste(['--login'])).toBe(false);
+    expect(looksLikeInlineCurlPaste(['--from-clipboard', '--login'])).toBe(false);
+    expect(looksLikeInlineCurlPaste(['--profile', 'myprofile'])).toBe(false);
+  });
+
+  it('does NOT trip on a correctly quoted single-argument paste', () => {
+    // Quoted, the whole cURL command is ONE argv token, so no bare curl/flag/URL token appears.
+    const oneArg = "curl 'https://x.slack.com/api' -H 'Cookie: d=xoxd-abc' --compressed";
+    expect(looksLikeInlineCurlPaste([oneArg])).toBe(false);
   });
 });
