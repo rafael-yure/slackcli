@@ -4,6 +4,11 @@ export type AuthType = 'standard' | 'browser';
 export type TokenType = 'bot' | 'user';
 export type ConversationType = 'public_channel' | 'private_channel' | 'mpim' | 'im';
 
+// Which SecretStore backend (src/lib/secret-store.ts) a profile's credentials
+// live in. Absent on a record means 'file' — the only backend that existed
+// before #219, so every pre-existing workspaces.json stays valid unchanged.
+export type SecretBackend = 'file' | 'keychain';
+
 // Workspace configuration interfaces
 export interface StandardAuthConfig {
   workspace_id: string;
@@ -14,6 +19,14 @@ export interface StandardAuthConfig {
   // Authenticated user/bot id (from auth.test). Distinguishes a token refresh of
   // the same identity from a genuinely new identity within the same team.
   user_id?: string;
+  // Only present when it differs from the default ('file'). See SecretBackend.
+  secret_backend?: SecretBackend;
+  // Set to the OLD backend, transiently, when a migration has flipped
+  // `secret_backend` and durably saved it but has not yet confirmed the old
+  // backend's copy is deleted. `auth migrate-secrets` retries that cleanup
+  // (and clears this) on every later run until it succeeds — see
+  // migrateWorkspaceCredentials / migrateSecrets in workspaces.ts.
+  secret_cleanup_pending?: SecretBackend;
   auth_type: 'standard';
   token: string;
   token_type: TokenType;
@@ -25,6 +38,8 @@ export interface BrowserAuthConfig {
   workspace_url: string;
   profile?: string;
   user_id?: string;
+  secret_backend?: SecretBackend;
+  secret_cleanup_pending?: SecretBackend;
   auth_type: 'browser';
   xoxd_token: string;
   xoxc_token: string;
