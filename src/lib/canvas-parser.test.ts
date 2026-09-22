@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import { canvasHtmlToMarkdown, isAuthPage } from './canvas-parser.ts';
+import { canvasHtmlToMarkdown, isAuthPage, stripTags } from './canvas-parser.ts';
 
 // ---------------------------------------------------------------------------
 // Fixtures — based on real Slack Canvas HTML exports
@@ -185,6 +185,13 @@ describe('canvasHtmlToMarkdown', () => {
     it('should decode HTML entities', () => {
       const result = canvasHtmlToMarkdown(ENTITIES);
       expect(result).toContain('Fish & Chips <3 "tasty"');
+    });
+
+    it('should decode every occurrence of each supported entity', () => {
+      const html = `<p class='line'>a &amp; b &amp; c &lt;x&gt; &lt;y&gt; &quot;q&quot; it&#39;s &#39;ok&#39; one&nbsp;two&nbsp;three</p>`;
+      const result = canvasHtmlToMarkdown(html);
+      expect(result).toContain(`a & b & c <x> <y> "q" it's 'ok' one two three`);
+      expect(result).not.toMatch(/&(?:amp|lt|gt|quot|#39|nbsp);/);
     });
   });
 
@@ -377,6 +384,16 @@ describe('canvasHtmlToMarkdown', () => {
       expect(result.trim()).toBe('');
     });
 
+    it('should strip every zero-width space inside paragraph text and table cells', () => {
+      const html =
+        `<p class='line'>\u200Bfoo\u200Bbar\u200B</p>` +
+        `<table><tr><td>\u200Bcell\u200Bone\u200B</td></tr></table>`;
+      const result = canvasHtmlToMarkdown(html);
+      expect(result).not.toContain('\u200B');
+      expect(result).toContain('foobar');
+      expect(result).toContain('| cellone |');
+    });
+
     it('should preserve Slack mentions while stripping HTML tags', () => {
       const html = `<p class="line">Hello <div>world</div> <@U123ABC> and <#C456DEF></p>`;
       const result = canvasHtmlToMarkdown(html);
@@ -468,6 +485,74 @@ describe('canvasHtmlToMarkdown attribute and tag stripping (#213)', () => {
     expect(canvasHtmlToMarkdown(`<control data-remapped="true"><<i>script>x</control>`)).toBe('script>x\n');
     // A trailing "<" with no ">" is kept verbatim.
     expect(canvasHtmlToMarkdown(`<control data-remapped="true"><b>a</b> < b</control>`)).toBe('a < b\n');
+  });
+});
+
+describe('stripTags', () => {
+  const TAG = /<\/?[a-zA-Z][^>]*>/;
+  const TAGS = /<\/?[a-zA-Z][^>]*>/g;
+
+  it('should remove tags and keep text and Slack mentions', () => {
+    expect(stripTags('<b>bold</b> <@U123> <#C456|general> <i>x</i>')).toBe('bold <@U123> <#C456|general> x');
+  });
+
+  it('should leave strings without tags unchanged', () => {
+    for (const s of ['', 'plain', 'a < b > c', '<>', '</>', '<1>', '<', '>', '< b>', '<@U1>']) {
+      expect(stripTags(s)).toBe(s);
+    }
+  });
+
+  it('should not let stripped pieces rejoin into a tag', () => {
+    expect(stripTags('<<b>script>alert(1)<</b>/script>')).toBe('alert(1)');
+    expect(stripTags('<<<b>b>b>x')).toBe('x');
+    expect(stripTags('<</i>/b>x')).toBe('x');
+    expect(stripTags('<<b>@U1>')).toBe('<@U1>');
+  });
+
+  it('should match one regex pass unless that leaves a tag, and never leave one', () => {
+    // Deterministic LCG (high bits; the low bits cycle) so a failure is reproducible.
+    let seed = 231;
+    const rand = (n: number) => {
+      seed = (seed * 1103515245 + 12345) % 2 ** 31;
+      return (seed >>> 16) % n;
+    };
+    const alphabet = ['<', '<', '>', '>', '/', 'a', 'B', '@'];
+    let rejoined = 0;
+    for (let run = 0; run < 5000; run++) {
+      let s = '';
+      const len = rand(16);
+      for (let i = 0; i < len; i++) s += alphabet[rand(alphabet.length)];
+      // One global regex pass: the reference output, not a sanitizer.
+      const once = s.split(TAGS).join('');
+      const result = stripTags(s);
+      expect(result).not.toMatch(TAG);
+      if (TAG.test(once)) rejoined++;
+      else expect(result).toBe(once);
+    }
+    // The sample must exercise the rejoin path, not only the plain pass.
+    expect(rejoined).toBeGreaterThan(20);
+  });
+
+  it('should stay linear on deeply nested tag fragments', () => {
+    const depth = 50_000;
+    const start = performance.now();
+    const result = stripTags(`${'<'.repeat(depth)}${'b>'.repeat(depth)}x`);
+    expect(result).toBe('x');
+    expect(performance.now() - start).toBeLessThan(100);
+  });
+});
+
+describe('canvasHtmlToMarkdown tag reassembly', () => {
+  it('should not let a zero-width space hide a tag inside a table cell', () => {
+    const result = canvasHtmlToMarkdown(
+      `<table><tr><td><\u200Bscript>x</td><td><<b>script>y</td></tr></table>`,
+    );
+    expect(result).not.toContain('<script');
+    expect(result).toContain('| x | y |');
+  });
+
+  it('should not let stripped pieces rejoin into a tag inside a heading', () => {
+    expect(canvasHtmlToMarkdown(`<h1><<b>script>T</h1>`)).toBe('# T\n');
   });
 });
 
