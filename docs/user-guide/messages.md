@@ -192,21 +192,21 @@ To send a reviewed draft or discard it:
 
 ```bash
 slackcli messages list-drafts --json
-slackcli messages draft --send=Dr1234567890 --workspace=rafael --yes --json
-slackcli messages draft --delete=Dr1234567890 --workspace=rafael --yes --json
+slackcli messages send-draft Dr1234567890 --workspace=rafael --yes --json
+slackcli messages delete-draft Dr1234567890 --workspace=rafael --yes --json
 ```
 
-`--send` reads the active draft, posts its original rich-text blocks to the saved
+`send-draft` reads the active draft, posts its original rich-text blocks to the saved
 channel and `thread_ts` (if present), then deletes the draft. `--json` returns
 `{channel_id, ts, permalink?}` like `messages send`. A failed permalink lookup
 omits that field. Scheduled drafts, drafts with files, empty drafts, and drafts
-with multiple destinations are refused before posting. `--delete` removes the
+with multiple destinations are refused before posting. `delete-draft` removes the
 specified draft without posting; with `--json` it returns
 `{draft_id, deleted: true}`.
 
 Both actions ask for confirmation in a terminal. In a script or other non-TTY
-session, pass `--yes` explicitly. They cannot be combined with creation options.
-If posting succeeds but draft deletion fails, `--send --json` emits the posted
+session, pass `--yes` explicitly. If posting succeeds but draft deletion fails,
+`send-draft --json` emits the posted
 message identity plus `cleanup_error`, exits nonzero, and leaves the draft. Check
 the posted message before retrying; another send could duplicate it.
 

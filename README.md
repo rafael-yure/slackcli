@@ -314,8 +314,8 @@ slackcli messages react --permalink="$LINK" --emoji=+1
 slackcli messages edit --channel-id=C123 --timestamp=1234567890.123456 --message="Corrected"
 slackcli messages draft --recipient-id=C123 --message="Draft for later"
 slackcli messages list-drafts --json
-slackcli messages draft --send=Dr123 --yes --json             # post, then remove draft
-slackcli messages draft --delete=Dr456 --yes                  # discard draft
+slackcli messages send-draft Dr123 --yes --json               # post, then remove draft
+slackcli messages delete-draft Dr456 --yes                    # discard draft
 ```
 
 > [!NOTE]

@@ -133,22 +133,26 @@ describe('messages command', () => {
     expect(limit?.defaultValue).toBe('100');
   });
 
-  it('offers send, delete, confirmation, workspace, and JSON on draft', () => {
-    for (const option of ['--send', '--delete', '--yes', '--workspace', '--json']) {
-      expect(longOptions('draft')).toContain(option);
+  it('keeps draft creation separate from the send and delete commands', () => {
+    expect(longOptions('draft')).not.toContain('--yes');
+    for (const name of ['send-draft', 'delete-draft']) {
+      const command = subcommand(name);
+      expect(command).toBeDefined();
+      expect(command?.description()).toContain('Browser Session Tokens');
+      expect(command?.registeredArguments[0]?.required).toBe(true);
+      expect(longOptions(name)).toEqual(['--yes', '--workspace', '--json']);
     }
   });
 
-  it('rejects selecting both draft actions before a Slack request', async () => {
-    const command = createMessagesCommand();
-    command.commands.find((candidate) => candidate.name() === 'draft')!
-      .exitOverride()
-      .configureOutput({ writeErr: () => {} });
-    await expect(command.parseAsync([
-      'draft', '--send=Dr1', '--delete=Dr2', '--yes',
-    ], { from: 'user' })).rejects.toThrow(
-      "option '--send <draft-id>' cannot be used with option '--delete <draft-id>'"
-    );
+  it('requires an ID before entering either draft action', async () => {
+    for (const name of ['send-draft', 'delete-draft']) {
+      const command = createMessagesCommand();
+      command.commands.find((candidate) => candidate.name() === name)!
+        .exitOverride()
+        .configureOutput({ writeErr: () => {} });
+      await expect(command.parseAsync([name, '--yes'], { from: 'user' }))
+        .rejects.toThrow('missing required argument');
+    }
   });
 });
 
