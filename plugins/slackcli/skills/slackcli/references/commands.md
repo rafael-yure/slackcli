@@ -54,6 +54,8 @@ messages send --permalink=URL --message=T          # reply in that thread
 messages edit (--channel-id=C --timestamp=TS | --permalink=URL) (--message=T | --message-file=F) [--json]
 messages react (--channel-id=C --timestamp=TS | --permalink=URL) --emoji=NAME
 messages draft --recipient-id=C (--message=T | --message-file=F) [--json]    # browser auth only
+messages draft --send=Dr… [--yes] [--json]                                 # post, then delete draft
+messages draft --delete=Dr… [--yes] [--json]                               # discard draft
 messages list-drafts [--limit=100] [--json]                                  # browser auth only
 ```
 
@@ -62,6 +64,8 @@ colons. Only the authenticated identity's messages can be edited.
 JSON: `send` → `{channel_id, ts, permalink?}` (`permalink` omitted if lookup fails);
 with `--file` → `{channel_id, file_id}`. `edit` → `{channel_id, ts}`. `draft` → `{channel_id, draft_id}`.
 `list-drafts` → `{draft_count, drafts[]{draft_id,channel_id,text,date_created,file_ids,thread_ts?,date_scheduled?}}`.
+Draft `--send` → `{channel_id,ts,permalink?}`; on cleanup failure it also returns
+`cleanup_error` and exits nonzero. Draft `--delete` → `{draft_id,deleted:true}`.
 
 ## search
 

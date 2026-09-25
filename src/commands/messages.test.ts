@@ -132,6 +132,24 @@ describe('messages command', () => {
     const limit = subcommand('list-drafts')?.options.find((option) => option.long === '--limit');
     expect(limit?.defaultValue).toBe('100');
   });
+
+  it('offers send, delete, confirmation, workspace, and JSON on draft', () => {
+    for (const option of ['--send', '--delete', '--yes', '--workspace', '--json']) {
+      expect(longOptions('draft')).toContain(option);
+    }
+  });
+
+  it('rejects selecting both draft actions before a Slack request', async () => {
+    const command = createMessagesCommand();
+    command.commands.find((candidate) => candidate.name() === 'draft')!
+      .exitOverride()
+      .configureOutput({ writeErr: () => {} });
+    await expect(command.parseAsync([
+      'draft', '--send=Dr1', '--delete=Dr2', '--yes',
+    ], { from: 'user' })).rejects.toThrow(
+      "option '--send <draft-id>' cannot be used with option '--delete <draft-id>'"
+    );
+  });
 });
 
 describe('resolveMessageText', () => {
