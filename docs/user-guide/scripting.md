@@ -14,7 +14,7 @@ Every read command supports `--json`: `conversations list`, `conversations read`
 `messages list-scheduled`, `auth whoami`, `auth list`.
 
 The writing commands support it too — `messages send`, `messages edit`, `messages delete`,
-`messages draft`, `messages send-draft`, `messages delete-draft`, `messages schedule`,
+`messages react`, `messages unreact`, `messages draft`, `messages send-draft`, `messages delete-draft`, `messages schedule`,
 `messages delete-scheduled`, the `usergroups` write verbs (`create`, `update`, `add`,
 `remove`, `enable`, `disable`), the `conversations` membership write/self
 verbs (`members add`, `members remove`, `join`, `leave`), and
