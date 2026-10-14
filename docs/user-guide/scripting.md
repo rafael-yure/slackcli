@@ -133,7 +133,7 @@ list` returns plain IDs, so it has no `--fields`.
 ## `--dry-run`
 
 Every command that changes something in Slack takes `--dry-run`:
-`messages send`, `edit`, `delete`, `react`, `draft`, `send-draft`, `delete-draft`,
+`messages send`, `edit`, `delete`, `react`, `unreact`, `draft`, `send-draft`, `delete-draft`,
 `schedule`, `delete-scheduled`;
 `conversations members add`, `members remove`, `join`, `leave`, `mark-read`; and
 `usergroups create`, `update`, `add`, `remove`, `enable`, `disable`.
@@ -164,7 +164,7 @@ With `--json` the preview is one object on stdout:
 }
 ```
 
-- `action` names the write: `send message`, `edit message`, `add reaction`,
+- `action` names the write: `send message`, `edit message`, `add reaction`, `remove reaction`,
   `create draft`, `send draft`, `delete draft`, `schedule message`,
   `delete scheduled message`, `add channel members`,
   `remove channel members`, `join channel`, `leave channel`,
@@ -184,7 +184,6 @@ With `--json` the preview is one object on stdout:
   `remove` user IDs for a channel; for a user group, the fields to set, or
   `{ added, removed, next, noop }` where `next` is the full member list the
   write would send. `team` appears when `--team` is passed.
-- `messages react` has no `--json`, so its preview is text only.
 
 A dry run may make read calls (resolving a user group, reading its members,
 loading a draft, finding a scheduled message, naming the target) but no write call. A failure is the real
